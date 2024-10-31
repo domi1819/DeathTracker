@@ -34,5 +34,19 @@ namespace CelesteDeathTracker
             AfterDeathAndInMenu,
             Always
         }
+
+        public string Patata = "holi";
+
+        public ExportToFileSubmenu ExportToFileMenu { get; set; } = new ExportToFileSubmenu();
+    }
+
+    [SettingSubMenu]
+    public class ExportToFileSubmenu
+    {
+        public bool ExportToFile { get; set; } = false;
+
+        public bool ExportSameFormatAsDisplay { get; set; } = true;
+        
+        public string _exportToFileFormat = "$C ($B)";
     }
 }

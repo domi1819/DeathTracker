@@ -3,7 +3,9 @@ using Microsoft.Xna.Framework;
 using Monocle;
 using System.Linq;
 using System.Text;
+using System.IO;
 using static CelesteDeathTracker.DeathTrackerSettings.VisibilityOption;
+using System.Xml;
 
 namespace CelesteDeathTracker
 {
@@ -65,6 +67,21 @@ namespace CelesteDeathTracker
             if (canShow && DeathTrackerModule.Settings.DisplayVisibility is AfterDeath or AfterDeathAndInMenu)
             {
                 _timer = 3f;
+            }
+
+            if (DeathTrackerModule.Settings.ExportToFileMenu.ExportToFile && DeathTrackerModule.Settings.ExportToFileMenu.ExportSameFormatAsDisplay)
+            {
+                ExportToFile(_text);
+            } else if (DeathTrackerModule.Settings.ExportToFileMenu.ExportSameFormatAsDisplay)
+            {
+                newText = new StringBuilder(DeathTrackerModule.Settings!.ExportToFileMenu._exportToFileFormat)
+                .Replace("$C", _level.Session.Deaths.ToString())
+                .Replace("$B", stats.SingleRunCompleted ? stats.BestDeaths.ToString() : "-")
+                .Replace("$A", SaveData.Instance.Areas_Safe.First(a => a.ID_Safe == _level.Session.Area.ID).Modes[mode].Deaths.ToString())
+                .Replace("$T", SaveData.Instance.TotalDeaths.ToString())
+                .Replace("$L", _deathsSinceLevelLoad.ToString())
+                .Replace("$S", _deathsSinceScreenTransition.ToString())
+                .ToString();
             }
         }
 
@@ -169,6 +186,16 @@ namespace CelesteDeathTracker
                 AreaMode.BSide => "collectables/skullRed",
                 _ => "collectables/skullGold"
             };
+        }
+
+        public void ExportToFile(string exportFormat = null)
+        {
+            if (exportFormat == null)
+            {
+                exportFormat = DeathTrackerModule.Settings!.DisplayFormat;
+            }
+            
+            File.WriteAllText("./deathTrackerOutput.txt", exportFormat);
         }
     }
 }
