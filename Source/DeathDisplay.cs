@@ -31,7 +31,10 @@ namespace CelesteDeathTracker
         private int _deathsSinceLevelLoad;
         private int _deathsSinceScreenTransition;
 
-        public DeathDisplay(Level level)
+		private readonly bool export = DeathTrackerModule.Settings.ExportToFileOptions.ExportToFile;
+		private readonly bool format = DeathTrackerModule.Settings.ExportToFileOptions.ExportSameFormatAsDisplay;
+		
+		public DeathDisplay(Level level)
         {
             _level = level;
             _bg = GFX.Gui["strawberryCountBG"];
@@ -51,8 +54,10 @@ namespace CelesteDeathTracker
         {
             var mode = (int)_level.Session.Area.Mode;
             var stats = _level.Session.OldStats.Modes[mode];
+			
+            string exportText;
 
-            var newText = new StringBuilder(DeathTrackerModule.Settings!.DisplayFormat)
+			var newText = new StringBuilder(DeathTrackerModule.Settings!.DisplayFormat)
                 .Replace("$C", _level.Session.Deaths.ToString())
                 .Replace("$B", stats.SingleRunCompleted ? stats.BestDeaths.ToString() : "-")
                 .Replace("$A", SaveData.Instance.Areas_Safe.First(a => a.ID_Safe == _level.Session.Area.ID).Modes[mode].Deaths.ToString())
@@ -64,24 +69,30 @@ namespace CelesteDeathTracker
             _text = newText;
             _width = ActiveFont.Measure(_text).X + TextPadLeft + TextPadRight;
 
-            if (canShow && DeathTrackerModule.Settings.DisplayVisibility is AfterDeath or AfterDeathAndInMenu)
+            if (!format)
             {
-                _timer = 3f;
+				exportText = new StringBuilder(DeathTrackerModule.Settings.ExportToFileOptions.ExportFormat)
+				.Replace("$C", _level.Session.Deaths.ToString())
+				.Replace("$B", stats.SingleRunCompleted ? stats.BestDeaths.ToString() : "-")
+				.Replace("$A", SaveData.Instance.Areas_Safe.First(a => a.ID_Safe == _level.Session.Area.ID).Modes[mode].Deaths.ToString())
+				.Replace("$T", SaveData.Instance.TotalDeaths.ToString())
+				.Replace("$L", _deathsSinceLevelLoad.ToString())
+				.Replace("$S", _deathsSinceScreenTransition.ToString())
+                .Replace("$N", "\n").ToString();
+            }
+            else
+            {
+                exportText = _text;
             }
 
-            if (DeathTrackerModule.Settings.ExportToFileMenu.ExportToFile && DeathTrackerModule.Settings.ExportToFileMenu.ExportSameFormatAsDisplay)
+			if (export)
+			{
+				ExportToFile(exportText);
+			}
+
+			if (canShow && DeathTrackerModule.Settings.DisplayVisibility is AfterDeath or AfterDeathAndInMenu)
             {
-                ExportToFile(_text);
-            } else if (DeathTrackerModule.Settings.ExportToFileMenu.ExportSameFormatAsDisplay)
-            {
-                newText = new StringBuilder(DeathTrackerModule.Settings!.ExportToFileMenu._exportToFileFormat)
-                .Replace("$C", _level.Session.Deaths.ToString())
-                .Replace("$B", stats.SingleRunCompleted ? stats.BestDeaths.ToString() : "-")
-                .Replace("$A", SaveData.Instance.Areas_Safe.First(a => a.ID_Safe == _level.Session.Area.ID).Modes[mode].Deaths.ToString())
-                .Replace("$T", SaveData.Instance.TotalDeaths.ToString())
-                .Replace("$L", _deathsSinceLevelLoad.ToString())
-                .Replace("$S", _deathsSinceScreenTransition.ToString())
-                .ToString();
+                _timer = 3f;
             }
         }
 
@@ -188,14 +199,11 @@ namespace CelesteDeathTracker
             };
         }
 
-        public void ExportToFile(string exportFormat = null)
+        public void ExportToFile(string exportText = null)
         {
-            if (exportFormat == null)
-            {
-                exportFormat = DeathTrackerModule.Settings!.DisplayFormat;
-            }
-            
-            File.WriteAllText("./deathTrackerOutput.txt", exportFormat);
+            string path = DeathTrackerModule.Settings.ExportToFileOptions.Path == "" ? "./" : DeathTrackerModule.Settings.ExportToFileOptions.Path;
+
+			File.WriteAllText(path + "deathTrackerOutput.txt", exportText);
         }
     }
 }
