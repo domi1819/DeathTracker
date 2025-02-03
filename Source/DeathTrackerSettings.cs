@@ -8,7 +8,7 @@ namespace CelesteDeathTracker
     {
         private string _displayFormat = "$C ($B)";
 
-        public bool AutoRestartChapter { get; set; } = false;
+		public bool AutoRestartChapter { get; set; } = false;
 
         [SettingMaxLength(48)]
         public string DisplayFormat
@@ -34,5 +34,34 @@ namespace CelesteDeathTracker
             AfterDeathAndInMenu,
             Always
         }
+
+        // Options added for file exporting
+        public ExportToFileSubmenu ExportToFileOptions { get; set; } = new ExportToFileSubmenu();
     }
+
+    [SettingSubMenu]
+    public class ExportToFileSubmenu
+    {
+		[SettingSubText("Decides if 'deathTrackerOutput.txt' is created in the path folder.\nDefault location is the Celeste install folder.")]
+		public bool ExportToFile { get; set; } = false;
+
+        [SettingMaxLength(200)]
+        [SettingSubText("You can change the path with this option.\nDefault value is ./ that works as the installation folder.")]
+        public string Path { get; set; } = "./";
+
+		public bool ExportSameFormatAsDisplay { get; set; } = true;
+
+		private string _exportFormat = "$C ($B)";
+
+		[SettingMaxLength(48)]
+		[SettingSubText("This option only works if above option is ON.\nUsing $N will be replaced with a new line in the output file.")]
+		public string ExportFormat
+		{
+			get => _exportFormat;
+			set => _exportFormat = value.Contains("{0}") || value.Contains("{1}")
+				? string.Format(value, "$C", "$B")
+				: value;
+		}
+
+	}
 }
